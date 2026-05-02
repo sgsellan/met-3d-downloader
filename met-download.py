@@ -2,11 +2,9 @@
 """Download Met 3D scans, convert to OBJ, save metadata sidecars.
 
 Usage:
-    pip install playwright trimesh pillow networkx
-    playwright install chromium
-    python met_download.py
+    python met-download.py --contact "your.email@example.com"
 """
-import json, re, sys, time, urllib.request, urllib.error, pathlib, datetime
+import argparse, json, re, sys, time, urllib.request, urllib.error, pathlib, datetime
 from playwright.sync_api import sync_playwright
 import trimesh
 
@@ -33,18 +31,10 @@ def log(msg: str) -> None:
 
 import urllib.error
 
-API_HEADERS = {
-    "User-Agent": "met-scans-downloader/1.0 (academic; contact: silvia)",
-    "Accept": "application/json",
-}
-
 import requests
 
 _API_SESSION = requests.Session()
-_API_SESSION.headers.update({
-    "User-Agent": "met-scans/1.0",
-    "Accept": "application/json",
-})
+_API_SESSION.headers.update({"Accept": "application/json"})
 
 def fetch_metadata(object_id: str, retries: int = 3) -> dict | None:
     url = f"https://collectionapi.metmuseum.org/public/collection/v1/objects/{object_id}"
@@ -86,9 +76,11 @@ def write_metadata(meta: dict, out_path: pathlib.Path) -> None:
 # ---------- GLB → OBJ -----------------------------------------------------
 import subprocess, shutil
 
-BLENDER = shutil.which("blender") or "/Applications/Blender.app/Contents/MacOS/Blender"
+BLENDER = shutil.which("blender") or "/Applications/Blender.app/Contents/MacOS/Blender" # common Mac path; adjust as needed
 
 def convert_glb_to_obj(glb_path: pathlib.Path, obj_path: pathlib.Path) -> bool:
+    if not BLENDER:
+        sys.exit("Blender not found. Install it and make sure 'blender' is on your PATH.")
     obj_path.parent.mkdir(parents=True, exist_ok=True)
     try:
         result = subprocess.run(
@@ -188,6 +180,18 @@ def download(url: str, out_path: pathlib.Path) -> bool:
 # ---------- main ----------------------------------------------------------
 
 def main():
+    parser = argparse.ArgumentParser(description="Download Met Museum 3D scans.")
+    parser.add_argument("--contact", required=True,
+                        help="Your email or name for the API User-Agent header, "
+                             "e.g. 'your.email@example.com'")
+    parser.add_argument("--purpose", default="academic",
+                        help="Purpose string for the User-Agent header (default: academic)")
+    args = parser.parse_args()
+
+    _API_SESSION.headers["User-Agent"] = (
+        f"met-scans-downloader/1.0 ({args.purpose}; contact: {args.contact})"
+    )
+
     if not IDS_FILE.exists():
         sys.exit(f"missing {IDS_FILE}")
     ids = [x.strip() for x in IDS_FILE.read_text().splitlines() if x.strip()]
