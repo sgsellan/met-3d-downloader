@@ -222,7 +222,6 @@ def main():
                 continue
 
             assets = extract_assets(html)
-            import pprint; pprint.pp(assets[0]); sys.exit()
             if not assets:
                 print(f"  [{i}/{total}] {oid}: no 3D data")
                 log(f"NO_3D {oid}")
