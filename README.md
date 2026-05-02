@@ -1,3 +1,5 @@
+*Generated with the help of Claude Code*
+
 # Met Museum 3D Scan Downloader
 
 Downloads all 3D scans from the [Metropolitan Museum of Art's online collection](https://www.metmuseum.org/art/collection/search?showOnly=has3d), converts them from GLB to OBJ, and saves per-object metadata sidecars using the [Met Collection API](https://metmuseum.github.io/).
